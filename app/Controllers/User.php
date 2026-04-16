@@ -103,7 +103,16 @@ class User extends BaseController
         $type = $this->request->getPost('type'); // datang or pulang
         $latitude = $this->request->getPost('latitude');
         $longitude = $this->request->getPost('longitude');
+        $accuracy = $this->request->getPost('accuracy');
         $photo = $this->request->getFile('photo');
+
+        // Proteksi Fake GPS Sederhana: Cek Akurasi
+        if ($accuracy && $accuracy > 100) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Akurasi lokasi terlalu rendah (' . round($accuracy) . 'm). Pastikan Anda berada di ruang terbuka dan tidak menggunakan Fake GPS.'
+            ]);
+        }
 
         $lokasi = $this->lokasiUserModel->getLokasiForUser($userId);
         $tanggal = date('Y-m-d');

@@ -15,7 +15,7 @@ class Auth extends BaseController
 
     public function login()
     {
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $email = $this->request->getPost('email');
             $password = $this->request->getPost('password');
 
@@ -46,7 +46,7 @@ class Auth extends BaseController
 
     public function register()
     {
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $name = $this->request->getPost('name');
             $email = $this->request->getPost('email');
             $password = $this->request->getPost('password');

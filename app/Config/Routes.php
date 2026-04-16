@@ -41,3 +41,4 @@ $routes->get('/admin/delete-lokasi/(:num)', 'Admin::deleteLokasi/$1');
 
 // Admin Absensi Routes
 $routes->get('/admin/absensi', 'Admin::absensi');
+$routes->get('/admin/delete-absensi/(:num)', 'Admin::deleteAbsensi/$1');

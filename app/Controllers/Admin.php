@@ -31,7 +31,7 @@ class Admin extends BaseController
 
     public function dashboard()
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
         $totalUsers = $this->userModel->where('role', 'user')->countAllResults();
         $totalLokasi = $this->lokasiModel->countAllResults();
@@ -49,9 +49,13 @@ class Admin extends BaseController
 
     public function users()
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
-        $users = $this->userModel->where('role', 'user')->findAll();
+        $users = $this->userModel->select('users.*, lokasi.name as lokasi_name')
+                                ->join('lokasi_user', 'lokasi_user.user_id = users.id', 'left')
+                                ->join('lokasi', 'lokasi.id = lokasi_user.lokasi_id', 'left')
+                                ->where('role', 'user')
+                                ->findAll();
 
         $data = [
             'title' => 'Manage Users',
@@ -63,9 +67,9 @@ class Admin extends BaseController
 
     public function addUser()
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $this->userModel->save([
                 'name' => $this->request->getPost('name'),
                 'email' => $this->request->getPost('email'),
@@ -73,16 +77,33 @@ class Admin extends BaseController
                 'role' => 'user'
             ]);
 
+            $userId = $this->userModel->getInsertID();
+            $lokasiId = $this->request->getPost('lokasi_id');
+
+            if ($lokasiId) {
+                $this->lokasiUserModel->insert([
+                    'user_id' => $userId,
+                    'lokasi_id' => $lokasiId
+                ]);
+            }
+
             session()->setFlashdata('success', 'User berhasil ditambahkan');
             return redirect()->to('/admin/users');
         }
 
-        return view('admin/add_user');
+        $lokasi = $this->lokasiModel->findAll();
+
+        $data = [
+            'title' => 'Tambah User',
+            'lokasi' => $lokasi
+        ];
+
+        return view('admin/add_user', $data);
     }
 
     public function editUser($id)
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
         $user = $this->userModel->find($id);
 
@@ -90,7 +111,7 @@ class Admin extends BaseController
             throw new \Exception('User tidak ditemukan');
         }
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $data = [
                 'name' => $this->request->getPost('name'),
                 'email' => $this->request->getPost('email'),
@@ -107,9 +128,14 @@ class Admin extends BaseController
             $existingLokasi = $this->lokasiUserModel->where('user_id', $id)->first();
 
             if ($existingLokasi) {
-                $this->lokasiUserModel->update($existingLokasi['id'], ['lokasi_id' => $lokasiId]);
+                $this->lokasiUserModel->where('id', $existingLokasi['id'])
+                                     ->set(['lokasi_id' => $lokasiId])
+                                     ->update();
             } else {
-                $this->lokasiUserModel->save(['user_id' => $id, 'lokasi_id' => $lokasiId]);
+                $this->lokasiUserModel->insert([
+                    'user_id' => $id,
+                    'lokasi_id' => $lokasiId
+                ]);
             }
 
             session()->setFlashdata('success', 'User berhasil diupdate');
@@ -131,7 +157,7 @@ class Admin extends BaseController
 
     public function deleteUser($id)
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
         $this->userModel->delete($id);
         $this->lokasiUserModel->where('user_id', $id)->delete();
@@ -142,7 +168,7 @@ class Admin extends BaseController
 
     public function lokasi()
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
         $lokasi = $this->lokasiModel->findAll();
 
@@ -156,9 +182,9 @@ class Admin extends BaseController
 
     public function addLokasi()
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $this->lokasiModel->save([
                 'name' => $this->request->getPost('name'),
                 'latitude' => $this->request->getPost('latitude'),
@@ -175,7 +201,7 @@ class Admin extends BaseController
 
     public function editLokasi($id)
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
         $lokasi = $this->lokasiModel->find($id);
 
@@ -183,7 +209,7 @@ class Admin extends BaseController
             throw new \Exception('Lokasi tidak ditemukan');
         }
 
-        if ($this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $this->lokasiModel->update($id, [
                 'name' => $this->request->getPost('name'),
                 'latitude' => $this->request->getPost('latitude'),
@@ -205,7 +231,7 @@ class Admin extends BaseController
 
     public function deleteLokasi($id)
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
         $this->lokasiModel->delete($id);
 
@@ -215,7 +241,7 @@ class Admin extends BaseController
 
     public function absensi()
     {
-        $this->checkAdminLogin();
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
 
         $page = $this->request->getGet('page') ?? 1;
         $search = $this->request->getGet('search');
@@ -233,5 +259,15 @@ class Admin extends BaseController
         ];
 
         return view('admin/absensi', $data);
+    }
+
+    public function deleteAbsensi($id)
+    {
+        if ($redirect = $this->checkAdminLogin()) return $redirect;
+
+        $this->absensiModel->delete($id);
+
+        session()->setFlashdata('success', 'Data absensi berhasil dihapus');
+        return redirect()->to('/admin/absensi');
     }
 }

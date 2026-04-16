@@ -29,26 +29,68 @@
     <?= $this->include('layouts/footer') ?>
 
     <script>
-        // Function untuk mengecek lokasi GPS
+        // Function untuk mengecek lokasi GPS dengan proteksi anti-fake GPS
         function getLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(showPosition, showError);
+                // Konfigurasi untuk akurasi tinggi
+                const options = {
+                    enableHighAccuracy: true, // Wajib untuk meminimalkan Fake GPS
+                    timeout: 10000,
+                    maximumAge: 0
+                };
+
+                navigator.geolocation.getCurrentPosition(showPosition, showError, options);
             } else {
                 alert("Geolocation tidak didukung browser Anda");
             }
         }
 
         function showPosition(position) {
+            // Deteksi sederhana Fake GPS
+            // 1. Cek navigator.webdriver (sering digunakan bot/spoofing)
+            if (navigator.webdriver) {
+                console.warn("Automated browser detected");
+            }
+
+            // 2. Cek akurasi. Fake GPS sering memberikan akurasi yang terlalu "sempurna" (misal: 0 atau 1)
+            // atau sangat buruk. Akurasi 100+ meter biasanya mencurigakan untuk High Accuracy.
+            const accuracy = position.coords.accuracy;
+            
+            if (accuracy > 100) {
+                console.warn("Akurasi terlalu rendah, kemungkinan sinyal lemah atau manipulasi.");
+            }
+
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
             
-            console.log(`Latitude: ${lat}, Longitude: ${lon}`);
-            window.userLocation = { latitude: lat, longitude: lon };
+            console.log(`Latitude: ${lat}, Longitude: ${lon}, Accuracy: ${accuracy}m`);
+            
+            window.userLocation = { 
+                latitude: lat, 
+                longitude: lon, 
+                accuracy: accuracy,
+                isMocked: position.mocked || false // Beberapa browser mobile mengirimkan flag ini
+            };
         }
 
         function showError(error) {
-            console.error('Error:', error.message);
-            alert('Gagal mendapatkan lokasi: ' + error.message);
+            let msg = '';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    msg = "User menolak permintaan Geolocation.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    msg = "Informasi lokasi tidak tersedia.";
+                    break;
+                case error.TIMEOUT:
+                    msg = "Waktu permintaan lokasi habis.";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    msg = "Terjadi kesalahan yang tidak diketahui.";
+                    break;
+            }
+            console.error('Error:', msg);
+            // alert('Gagal mendapatkan lokasi: ' + msg);
         }
 
         // Get location saat halaman load

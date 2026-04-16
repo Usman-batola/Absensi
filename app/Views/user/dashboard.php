@@ -122,11 +122,16 @@ function startAbsensi(type) {
     
     // Check location first
     if (navigator.geolocation) {
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        };
         navigator.geolocation.getCurrentPosition(function(position) {
             checkLocationAndStartCamera(position, type);
-        }, function() {
-            alert('Gagal mendapatkan lokasi. Pastikan GPS diaktifkan.');
-        });
+        }, function(error) {
+            alert('Gagal mendapatkan lokasi. Pastikan GPS diaktifkan dan berikan izin lokasi.');
+        }, options);
     }
 }
 
@@ -218,11 +223,17 @@ function submitAbsensi() {
     }
 
     if (navigator.geolocation) {
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        };
         navigator.geolocation.getCurrentPosition(function(position) {
             const formData = new FormData();
             formData.append('type', currentType);
             formData.append('latitude', position.coords.latitude);
             formData.append('longitude', position.coords.longitude);
+            formData.append('accuracy', position.coords.accuracy);
             formData.append('photo', photoData, 'photo.jpg');
 
             fetch('/user/save-absensi', {
@@ -246,7 +257,9 @@ function submitAbsensi() {
                 alert('Error: ' + error.message);
                 console.error(error);
             });
-        });
+        }, function(error) {
+            alert('Gagal mendapatkan lokasi saat pengiriman.');
+        }, options);
     } else {
         alert('Geolocation tidak didukung');
     }

@@ -7,11 +7,7 @@
             <i class="fas fa-user-plus"></i> Register
         </h1>
 
-        <?php if (session()->has('error')): ?>
-            <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                <?= session()->getFlashdata('error') ?>
-            </div>
-        <?php endif; ?>
+
 
         <form method="POST">
             <?= csrf_field() ?>

@@ -33,12 +33,13 @@
                 <th class="px-6 py-3 text-left">Jam Pulang</th>
                 <th class="px-6 py-3 text-left">Status</th>
                 <th class="px-6 py-3 text-left">Foto</th>
+                <th class="px-6 py-3 text-left">Action</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($absensi)): ?>
                 <tr>
-                    <td colspan="8" class="px-6 py-4 text-center text-gray-600">
+                    <td colspan="9" class="px-6 py-4 text-center text-gray-600">
                         <i class="fas fa-inbox"></i> Belum ada data absensi
                     </td>
                 </tr>
@@ -91,6 +92,13 @@
                                     </a>
                                 <?php endif; ?>
                             </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <a href="/admin/delete-absensi/<?= $row['id'] ?>" 
+                               class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                               onclick="return confirm('Yakin ingin menghapus data absensi ini?')">
+                                <i class="fas fa-trash"></i> Hapus
+                            </a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
